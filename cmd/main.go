@@ -15,7 +15,7 @@ func main() {
 	logger := logrus.Get("Main")
 	logger.Info("Starting KNoT Babeltower")
 
-	amqp := network.NewAmqpHandler(logrus.Get("AmqpHandler"))
+	amqp := network.NewAmqpHandler(config.RabbitMQ.URL, logrus.Get("AmqpHandler"))
 	amqp.Start()
 
 	server := server.NewServer(config.Server.Port, logrus.Get("Server"))

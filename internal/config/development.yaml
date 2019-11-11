@@ -3,3 +3,6 @@ server:
 
 logger:
   level: debug
+
+rabbitmq:
+  url: amqp://localhost/

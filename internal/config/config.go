@@ -19,10 +19,16 @@ type Logger struct {
 	Level string
 }
 
+// RabbitMQ represents the rabbitmq configuration properties
+type RabbitMQ struct {
+	URL string
+}
+
 // Config represents the service configuration
 type Config struct {
 	Server
 	Logger
+	RabbitMQ
 }
 
 func readFile(name string) {
