@@ -49,3 +49,16 @@ func (ah *AmqpHandler) Start(started chan bool) {
 	ah.channel = channel
 	started <- true
 }
+
+// Stop closes the connection started
+func (ah *AmqpHandler) Stop() {
+	if ah.conn != nil && !ah.conn.IsClosed() {
+		ah.conn.Close()
+	}
+
+	if ah.channel != nil {
+		ah.channel.Close()
+	}
+
+	ah.logger.Debug("AMQP handler stopped")
+}
