@@ -27,12 +27,14 @@ func NewServer(port int, logger logging.Logger) Server {
 }
 
 // Start starts the http server
-func (s *Server) Start() {
+func (s *Server) Start(started chan bool) {
 	routers := s.createRouters()
 	s.logger.Infof("Listening on %d", s.port)
+	started <- true // Since ListenAndServe is blocking the channel must be set an instruction before call it
 	err := http.ListenAndServe(fmt.Sprintf(":%d", s.port), s.logRequest(routers))
 	if err != nil {
 		s.logger.Error(err)
+		started <- false
 	}
 }
 

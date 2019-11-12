@@ -25,11 +25,12 @@ func (ah *AmqpHandler) notifyWhenClosed() {
 }
 
 // Start starts the handler
-func (ah *AmqpHandler) Start() {
+func (ah *AmqpHandler) Start(started chan bool) {
 	conn, err := amqp.Dial(ah.url)
 	if err != nil {
 		// TODO: try to reconnect
 		ah.logger.Error(err)
+		started <- false
 		return
 	}
 
@@ -40,9 +41,11 @@ func (ah *AmqpHandler) Start() {
 	if err != nil {
 		// TODO: try to create channel again
 		ah.logger.Error(err)
+		started <- false
 		return
 	}
 
 	ah.logger.Debug("AMQP handler connected")
 	ah.channel = channel
+	started <- true
 }

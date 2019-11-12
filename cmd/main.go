@@ -29,9 +29,24 @@ func main() {
 
 	go monitorSignals(sigs, logger)
 
+	amqpChan := make(chan bool, 1)
 	amqp := network.NewAmqpHandler(config.RabbitMQ.URL, logrus.Get("AmqpHandler"))
-	amqp.Start()
+	go amqp.Start(amqpChan)
 
+	serverChan := make(chan bool, 1)
 	server := server.NewServer(config.Server.Port, logrus.Get("Server"))
-	server.Start()
+	go server.Start(serverChan)
+
+	for {
+		select {
+		case started := <-serverChan:
+			if started {
+				logger.Info("Server started")
+			}
+		case started := <-amqpChan:
+			if started {
+				logger.Info("AMQP started")
+			}
+		}
+	}
 }
