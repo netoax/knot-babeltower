@@ -51,6 +51,7 @@ func main() {
 			}
 		case <-quit:
 			amqp.Stop()
+			server.Stop()
 		}
 	}
 }
