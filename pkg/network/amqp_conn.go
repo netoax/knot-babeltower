@@ -1,6 +1,8 @@
 package network
 
 import (
+	"gopkg.in/cenkalti/backoff.v3"
+
 	"github.com/CESARBR/knot-babeltower/pkg/logging"
 	"github.com/streadway/amqp"
 )
@@ -18,35 +20,54 @@ func NewAmqpHandler(url string, logger logging.Logger) *AmqpHandler {
 	return &AmqpHandler{url, logger, nil, nil}
 }
 
-func (ah *AmqpHandler) notifyWhenClosed() {
+func (ah *AmqpHandler) notifyWhenClosed(started chan bool) {
 	errReason := <-ah.conn.NotifyClose(make(chan *amqp.Error))
 	ah.logger.Infof("AMQP connection closed: %s", errReason)
-	// TODO: try to reconnect
+	started <- false
+	if errReason != nil {
+		err := backoff.Retry(ah.connect, backoff.NewExponentialBackOff())
+		if err != nil {
+			ah.logger.Error(err)
+			started <- false
+			return
+		}
+
+		go ah.notifyWhenClosed(started)
+		started <- true
+	}
 }
 
-// Start starts the handler
-func (ah *AmqpHandler) Start(started chan bool) {
+func (ah *AmqpHandler) connect() error {
 	conn, err := amqp.Dial(ah.url)
 	if err != nil {
-		// TODO: try to reconnect
 		ah.logger.Error(err)
-		started <- false
-		return
+		return err
 	}
 
 	ah.conn = conn
-	go ah.notifyWhenClosed()
 
-	channel, err := conn.Channel()
+	channel, err := ah.conn.Channel()
 	if err != nil {
-		// TODO: try to create channel again
 		ah.logger.Error(err)
-		started <- false
-		return
+		return err
 	}
 
 	ah.logger.Debug("AMQP handler connected")
 	ah.channel = channel
+
+	return nil
+}
+
+// Start starts the handler
+func (ah *AmqpHandler) Start(started chan bool) {
+	err := backoff.Retry(ah.connect, backoff.NewExponentialBackOff())
+	if err != nil {
+		ah.logger.Error(err)
+		started <- false
+		return
+	}
+
+	go ah.notifyWhenClosed(started)
 	started <- true
 }
 
