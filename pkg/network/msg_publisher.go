@@ -15,6 +15,11 @@ type MsgPublisher struct {
 	amqp   *AmqpHandler
 }
 
+// Publisher is the interface with methods that the publisher should have
+type Publisher interface {
+	SendRegisterDevice([]byte) error
+}
+
 // NewMsgPublisher constructs the MsgPublisher
 func NewMsgPublisher(logger logging.Logger, amqp *AmqpHandler) *MsgPublisher {
 	return &MsgPublisher{logger, amqp}

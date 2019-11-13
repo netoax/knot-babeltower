@@ -1,6 +1,11 @@
 package network
 
-import "github.com/CESARBR/knot-babeltower/pkg/logging"
+import (
+	"encoding/json"
+
+	"github.com/CESARBR/knot-babeltower/pkg/entities"
+	"github.com/CESARBR/knot-babeltower/pkg/logging"
+)
 
 const (
 	queueNameFogIn  = "FogIn"
@@ -8,21 +13,33 @@ const (
 	bindingKeyFogIn = "device.*"
 )
 
+// Interactor is the use case to be executed
+type Interactor interface {
+	Execute(id string, args ...interface{}) error
+}
+
 // MsgConsumer handle messages received from a service
 type MsgConsumer struct {
-	logger       logging.Logger
-	amqp         *AmqpHandler
-	msgPublisher *MsgPublisher
+	logger        logging.Logger
+	amqp          *AmqpHandler
+	registerThing Interactor
 }
 
 func (mc *MsgConsumer) onMsgReceived(msgChan chan InMsg) {
+	var thing entities.Thing
 	for {
 		msg := <-msgChan
 		mc.logger.Debug("Message received:", string(msg.Body))
 
 		switch msg.RoutingKey {
 		case "device.register":
-			err := mc.msgPublisher.SendRegisterDevice(msg.Body)
+			err := json.Unmarshal(msg.Body, &thing)
+			if err != nil {
+				mc.logger.Error(err)
+				continue
+			}
+
+			err = mc.registerThing.Execute(thing.ID, thing.Name)
 			if err != nil {
 				mc.logger.Error(err)
 				continue
@@ -32,8 +49,8 @@ func (mc *MsgConsumer) onMsgReceived(msgChan chan InMsg) {
 }
 
 // NewMsgConsumer constructs the MsgConsumer
-func NewMsgConsumer(logger logging.Logger, amqp *AmqpHandler, msgPublisher *MsgPublisher) *MsgConsumer {
-	return &MsgConsumer{logger, amqp, msgPublisher}
+func NewMsgConsumer(logger logging.Logger, amqp *AmqpHandler, registerThing Interactor) *MsgConsumer {
+	return &MsgConsumer{logger, amqp, registerThing}
 }
 
 // Start starts to listen messages

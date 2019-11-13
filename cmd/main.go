@@ -6,6 +6,7 @@ import (
 	"syscall"
 
 	"github.com/CESARBR/knot-babeltower/internal/config"
+	"github.com/CESARBR/knot-babeltower/pkg/interactors"
 	"github.com/CESARBR/knot-babeltower/pkg/network"
 	"github.com/CESARBR/knot-babeltower/pkg/server"
 
@@ -36,9 +37,10 @@ func main() {
 	go amqp.Start(amqpChan)
 
 	msgPublisher := network.NewMsgPublisher(logrus.Get("MsgPublisher"), amqp)
+	registerThing := interactors.NewRegisterThing(logrus.Get("RegisterThing"), msgPublisher)
 
 	msgChan := make(chan bool, 1)
-	msgConsumer := network.NewMsgConsumer(logrus.Get("MsgConsumer"), amqp, msgPublisher)
+	msgConsumer := network.NewMsgConsumer(logrus.Get("MsgConsumer"), amqp, registerThing)
 
 	serverChan := make(chan bool, 1)
 	server := server.NewServer(config.Server.Port, logrus.Get("Server"))
