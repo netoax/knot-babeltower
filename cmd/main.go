@@ -56,6 +56,8 @@ func main() {
 		case started := <-msgChan:
 			if started {
 				logger.Info("Msg consumer started")
+			} else {
+				quit <- true
 			}
 		case <-quit:
 			msgConsumer.Stop()
