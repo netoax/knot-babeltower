@@ -35,6 +35,9 @@ func main() {
 	amqp := network.NewAmqpHandler(config.RabbitMQ.URL, logrus.Get("AmqpHandler"))
 	go amqp.Start(amqpChan)
 
+	msgChan := make(chan bool, 1)
+	msgConsumer := network.NewMsgConsumer(logrus.Get("MsgConsumer"), amqp)
+
 	serverChan := make(chan bool, 1)
 	server := server.NewServer(config.Server.Port, logrus.Get("Server"))
 	go server.Start(serverChan)
@@ -48,8 +51,14 @@ func main() {
 		case started := <-amqpChan:
 			if started {
 				logger.Info("AMQP started")
+				go msgConsumer.Start(msgChan)
+			}
+		case started := <-msgChan:
+			if started {
+				logger.Info("Msg consumer started")
 			}
 		case <-quit:
+			msgConsumer.Stop()
 			amqp.Stop()
 			server.Stop()
 		}
