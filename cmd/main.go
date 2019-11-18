@@ -35,8 +35,10 @@ func main() {
 	amqp := network.NewAmqpHandler(config.RabbitMQ.URL, logrus.Get("AmqpHandler"))
 	go amqp.Start(amqpChan)
 
+	msgPublisher := network.NewMsgPublisher(logrus.Get("MsgPublisher"), amqp)
+
 	msgChan := make(chan bool, 1)
-	msgConsumer := network.NewMsgConsumer(logrus.Get("MsgConsumer"), amqp)
+	msgConsumer := network.NewMsgConsumer(logrus.Get("MsgConsumer"), amqp, msgPublisher)
 
 	serverChan := make(chan bool, 1)
 	server := server.NewServer(config.Server.Port, logrus.Get("Server"))

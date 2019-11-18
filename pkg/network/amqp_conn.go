@@ -143,6 +143,44 @@ func (ah *AmqpHandler) OnMessage(msgChan chan InMsg, queueName, exchange, key st
 	return nil
 }
 
+// PublishPersistentMessage sends a persistent message to RabbitMQ
+func (ah *AmqpHandler) PublishPersistentMessage(exchange, key string, body []byte) error {
+	err := ah.channel.ExchangeDeclare(
+		exchange,
+		amqp.ExchangeTopic, // type
+		true,               // durable
+		false,              // delete when complete
+		false,              // internal
+		false,              // noWait
+		nil,                // arguments
+	)
+	if err != nil {
+		ah.logger.Error(err)
+		return err
+	}
+
+	err = ah.channel.Publish(
+		exchange,
+		key,
+		false, // mandatory
+		false, // immediate
+		amqp.Publishing{
+			Headers:         amqp.Table{},
+			ContentType:     "text/plain",
+			ContentEncoding: "",
+			Body:            body,
+			DeliveryMode:    amqp.Persistent,
+			Priority:        0,
+		},
+	)
+	if err != nil {
+		ah.logger.Error(err)
+		return err
+	}
+
+	return nil
+}
+
 // Stop closes the connection started
 func (ah *AmqpHandler) Stop() {
 	if ah.conn != nil && !ah.conn.IsClosed() {

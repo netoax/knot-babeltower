@@ -10,20 +10,30 @@ const (
 
 // MsgConsumer handle messages received from a service
 type MsgConsumer struct {
-	logger logging.Logger
-	amqp   *AmqpHandler
+	logger       logging.Logger
+	amqp         *AmqpHandler
+	msgPublisher *MsgPublisher
 }
 
 func (mc *MsgConsumer) onMsgReceived(msgChan chan InMsg) {
 	for {
 		msg := <-msgChan
 		mc.logger.Debug("Message received:", string(msg.Body))
+
+		switch msg.RoutingKey {
+		case "device.register":
+			err := mc.msgPublisher.SendRegisterDevice(msg.Body)
+			if err != nil {
+				mc.logger.Error(err)
+				continue
+			}
+		}
 	}
 }
 
 // NewMsgConsumer constructs the MsgConsumer
-func NewMsgConsumer(logger logging.Logger, amqp *AmqpHandler) *MsgConsumer {
-	return &MsgConsumer{logger, amqp}
+func NewMsgConsumer(logger logging.Logger, amqp *AmqpHandler, msgPublisher *MsgPublisher) *MsgConsumer {
+	return &MsgConsumer{logger, amqp, msgPublisher}
 }
 
 // Start starts to listen messages
