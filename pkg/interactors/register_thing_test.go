@@ -3,7 +3,6 @@ package interactors
 import (
 	"testing"
 
-	"github.com/CESARBR/knot-babeltower/pkg/entities"
 	"github.com/CESARBR/knot-babeltower/pkg/logging"
 	"github.com/CESARBR/knot-babeltower/pkg/network"
 )
@@ -54,7 +53,10 @@ func (fp *FakeProxy) SendCreateThing(id, name, authorization string) (idGenerate
 func TestRegisterThing(t *testing.T) {
 	testCases := []struct {
 		name          string
-		thing         entities.Thing
+		testArguments bool
+		thingID       string
+		thingName     interface{}
+		authorization interface{}
 		fakeLogger    logging.Logger
 		fakePublisher network.Publisher
 		fakeProxy     network.ThingProxy
@@ -62,7 +64,10 @@ func TestRegisterThing(t *testing.T) {
 	}{
 		{
 			"shouldReturnNoError",
-			entities.Thing{ID: "123", Name: "test"},
+			false,
+			"123",
+			"test",
+			"authorization token",
 			&FakeRegisterThingLogger{},
 			&FakeMsgPublisher{},
 			&FakeProxy{},
@@ -70,7 +75,10 @@ func TestRegisterThing(t *testing.T) {
 		},
 		{
 			"shouldRaiseErrorIDLenght",
-			entities.Thing{ID: "01234567890123456789", Name: "test"},
+			false,
+			"01234567890123456789",
+			"test",
+			"authorization token",
 			&FakeRegisterThingLogger{},
 			&FakeMsgPublisher{},
 			&FakeProxy{},
@@ -78,7 +86,10 @@ func TestRegisterThing(t *testing.T) {
 		},
 		{
 			"shouldRaiseErrorNameNotFound",
-			entities.Thing{ID: "123", Name: ""},
+			false,
+			"123",
+			"",
+			"authorization token",
 			&FakeRegisterThingLogger{},
 			&FakeMsgPublisher{},
 			&FakeProxy{},
@@ -86,7 +97,10 @@ func TestRegisterThing(t *testing.T) {
 		},
 		{
 			"shouldRaiseErrorIDInvalid",
-			entities.Thing{ID: "not hex string", Name: "test"},
+			false,
+			"not hex string",
+			"test",
+			"authorization token",
 			&FakeRegisterThingLogger{},
 			&FakeMsgPublisher{},
 			&FakeProxy{},
@@ -94,18 +108,60 @@ func TestRegisterThing(t *testing.T) {
 		},
 		{
 			"shouldRaisePublishError",
-			entities.Thing{ID: "123", Name: "test"},
+			false,
+			"123",
+			"test",
+			"authorization token",
 			&FakeRegisterThingLogger{},
 			&FakeMsgPublisherWithSideEffect{},
 			&FakeProxy{},
 			ErrorFakePublisher{}.Error(),
 		},
+		{
+			"shouldRaiseMissingArgument",
+			true,
+			"123",
+			"",
+			"",
+			&FakeRegisterThingLogger{},
+			&FakeMsgPublisher{},
+			&FakeProxy{},
+			ErrorMissingArgument{}.Error(),
+		},
+		{
+			"shouldInvalidTypeName",
+			false,
+			"123",
+			123,
+			"",
+			&FakeRegisterThingLogger{},
+			&FakeMsgPublisher{},
+			&FakeProxy{},
+			ErrorInvalidTypeArgument{"Name is not string"}.Error(),
+		},
+		{
+			"shouldInvalidTypeToken",
+			false,
+			"123",
+			"test",
+			123,
+			&FakeRegisterThingLogger{},
+			&FakeMsgPublisher{},
+			&FakeProxy{},
+			ErrorInvalidTypeArgument{"Authorization token is not string"}.Error(),
+		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			var err error
 			createThingInteractor := NewRegisterThing(tc.fakeLogger, tc.fakePublisher, tc.fakeProxy)
-			err := createThingInteractor.Execute(tc.thing.ID, tc.thing.Name)
+			if tc.testArguments {
+				err = createThingInteractor.Execute(tc.thingID)
+			} else {
+				err = createThingInteractor.Execute(tc.thingID, tc.thingName, tc.authorization)
+			}
+
 			if err != nil {
 				if err.Error() != tc.errExpected {
 					t.Errorf("Create Thing failed with unexpected error. Error: %s", err)

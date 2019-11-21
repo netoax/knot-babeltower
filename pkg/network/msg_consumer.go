@@ -39,7 +39,8 @@ func (mc *MsgConsumer) onMsgReceived(msgChan chan InMsg) {
 				continue
 			}
 
-			err = mc.registerThing.Execute(thing.ID, thing.Name)
+			authorizationHeader := msg.Headers["Authorization"]
+			err = mc.registerThing.Execute(thing.ID, thing.Name, authorizationHeader)
 			if err != nil {
 				mc.logger.Error(err)
 				continue
