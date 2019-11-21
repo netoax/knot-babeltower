@@ -46,7 +46,7 @@ lint:
 
 .PHONY: cover
 cover:
-	${GOCMD} test -coverprofile=coverage.out ./... && ${GOCMD} tool cover -html=coverage.out
+	${GOCMD} test -coverprofile=coverage.out ./... && ${GOCMD} tool cover -html=coverage.out -o coverage.html
 
 .SILENT: clean
 .PHONY: clean
