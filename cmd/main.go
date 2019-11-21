@@ -36,8 +36,10 @@ func main() {
 	amqp := network.NewAmqpHandler(config.RabbitMQ.URL, logrus.Get("AmqpHandler"))
 	go amqp.Start(amqpChan)
 
+	thingProxy := network.NewThingProxy(logrus.Get("ThingProxy"), config.Things.Hostname, config.Things.Port)
+
 	msgPublisher := network.NewMsgPublisher(logrus.Get("MsgPublisher"), amqp)
-	registerThing := interactors.NewRegisterThing(logrus.Get("RegisterThing"), msgPublisher)
+	registerThing := interactors.NewRegisterThing(logrus.Get("RegisterThing"), msgPublisher, thingProxy)
 
 	msgChan := make(chan bool, 1)
 	msgConsumer := network.NewMsgConsumer(logrus.Get("MsgConsumer"), amqp, registerThing)

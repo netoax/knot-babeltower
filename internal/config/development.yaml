@@ -6,3 +6,7 @@ logger:
 
 rabbitmq:
   url: amqp://localhost/
+
+things:
+  hostname: localhost
+  port: 8082

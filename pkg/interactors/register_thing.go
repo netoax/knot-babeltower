@@ -12,6 +12,7 @@ import (
 type RegisterThing struct {
 	logger       logging.Logger
 	msgPublisher network.Publisher
+	thingProxy   network.ThingProxy
 }
 
 type registerResponse struct {
@@ -49,8 +50,8 @@ func (err ErrorArgument) Error() string {
 }
 
 // NewRegisterThing contructs the use case
-func NewRegisterThing(logger logging.Logger, msgPublisher network.Publisher) *RegisterThing {
-	return &RegisterThing{logger, msgPublisher}
+func NewRegisterThing(logger logging.Logger, msgPublisher network.Publisher, thingProxy network.ThingProxy) *RegisterThing {
+	return &RegisterThing{logger, msgPublisher, thingProxy}
 }
 
 func (rt *RegisterThing) verifyThingID(id string) error {

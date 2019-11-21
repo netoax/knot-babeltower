@@ -20,6 +20,9 @@ type FakeMsgPublisherWithSideEffect struct {
 type ErrorFakePublisher struct {
 }
 
+type FakeProxy struct {
+}
+
 func (fl *FakeRegisterThingLogger) Info(...interface{}) {}
 
 func (fl *FakeRegisterThingLogger) Infof(string, ...interface{}) {}
@@ -44,12 +47,17 @@ func (fp *FakeMsgPublisherWithSideEffect) SendRegisterDevice(msg []byte) error {
 	return ErrorFakePublisher{}
 }
 
+func (fp *FakeProxy) SendCreateThing(id, name, authorization string) (idGenerated string, err error) {
+	return idGenerated, nil
+}
+
 func TestRegisterThing(t *testing.T) {
 	testCases := []struct {
 		name          string
 		thing         entities.Thing
 		fakeLogger    logging.Logger
 		fakePublisher network.Publisher
+		fakeProxy     network.ThingProxy
 		errExpected   string
 	}{
 		{
@@ -57,6 +65,7 @@ func TestRegisterThing(t *testing.T) {
 			entities.Thing{ID: "123", Name: "test"},
 			&FakeRegisterThingLogger{},
 			&FakeMsgPublisher{},
+			&FakeProxy{},
 			"",
 		},
 		{
@@ -64,6 +73,7 @@ func TestRegisterThing(t *testing.T) {
 			entities.Thing{ID: "01234567890123456789", Name: "test"},
 			&FakeRegisterThingLogger{},
 			&FakeMsgPublisher{},
+			&FakeProxy{},
 			ErrorIDLenght{}.Error(),
 		},
 		{
@@ -71,6 +81,7 @@ func TestRegisterThing(t *testing.T) {
 			entities.Thing{ID: "123", Name: ""},
 			&FakeRegisterThingLogger{},
 			&FakeMsgPublisher{},
+			&FakeProxy{},
 			ErrorNameNotFound{}.Error(),
 		},
 		{
@@ -78,6 +89,7 @@ func TestRegisterThing(t *testing.T) {
 			entities.Thing{ID: "not hex string", Name: "test"},
 			&FakeRegisterThingLogger{},
 			&FakeMsgPublisher{},
+			&FakeProxy{},
 			ErrorIDInvalid{}.Error(),
 		},
 		{
@@ -85,13 +97,14 @@ func TestRegisterThing(t *testing.T) {
 			entities.Thing{ID: "123", Name: "test"},
 			&FakeRegisterThingLogger{},
 			&FakeMsgPublisherWithSideEffect{},
+			&FakeProxy{},
 			ErrorFakePublisher{}.Error(),
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			createThingInteractor := NewRegisterThing(tc.fakeLogger, tc.fakePublisher)
+			createThingInteractor := NewRegisterThing(tc.fakeLogger, tc.fakePublisher, tc.fakeProxy)
 			err := createThingInteractor.Execute(tc.thing.ID, tc.thing.Name)
 			if err != nil {
 				if err.Error() != tc.errExpected {
