@@ -16,9 +16,9 @@ type RegisterThing struct {
 }
 
 type registerResponse struct {
-	ID    string `json:"id"`
-	Token string `json:"token"`
-	Error error  `json:"error"`
+	ID    string  `json:"id"`
+	Token *string `json:"token"`
+	Error *string `json:"error"`
 }
 
 // ErrorIDLenght is raised when ID is more than 16 characters
@@ -126,7 +126,17 @@ func (rt *RegisterThing) Execute(id string, args ...interface{}) error {
 	token, err = rt.thingProxy.SendCreateThing(id, name, authorizationToken)
 
 send:
-	response := registerResponse{ID: id, Token: token, Error: err}
+	response := registerResponse{ID: id, Token: nil, Error: nil}
+	if err != nil {
+		response.Error = new(string)
+		*response.Error = err.Error()
+	}
+
+	if len(token) > 0 {
+		response.Token = new(string)
+		*response.Token = token
+	}
+
 	bytes, err := json.Marshal(response)
 	if err != nil {
 		rt.logger.Error(err)
