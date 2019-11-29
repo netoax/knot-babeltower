@@ -2,18 +2,9 @@ package interactors
 
 import (
 	"encoding/json"
+	"fmt"
 	"strconv"
-
-	"github.com/CESARBR/knot-babeltower/pkg/logging"
-	"github.com/CESARBR/knot-babeltower/pkg/network"
 )
-
-// RegisterThing use case to register a new thing
-type RegisterThing struct {
-	logger       logging.Logger
-	msgPublisher network.Publisher
-	thingProxy   network.ThingProxy
-}
 
 type registerResponse struct {
 	ID    string  `json:"id"`
@@ -63,67 +54,31 @@ func (err ErrorInvalidTypeArgument) Error() string {
 	return err.msg
 }
 
-// NewRegisterThing contructs the use case
-func NewRegisterThing(logger logging.Logger, msgPublisher network.Publisher, thingProxy network.ThingProxy) *RegisterThing {
-	return &RegisterThing{logger, msgPublisher, thingProxy}
-}
-
-func (rt *RegisterThing) verifyThingID(id string) error {
+func (i *ThingInteractor) verifyThingID(id string) error {
 	if len(id) > 16 {
 		return ErrorIDLenght{}
 	}
 
 	_, err := strconv.ParseUint(id, 16, 64)
 	if err != nil {
-		rt.logger.Error(err)
+		i.logger.Error(err)
 		return ErrorIDInvalid{}
 	}
 
 	return nil
 }
 
-func (rt *RegisterThing) getArguments(args ...interface{}) (string, string, error) {
-	if len(args) < 2 {
-		return "", "", ErrorMissingArgument{}
-	}
-
-	name, ok := args[0].(string)
-	if !ok {
-		return "", "", ErrorInvalidTypeArgument{msg: "Name is not string"}
-	}
-
-	if len(name) == 0 {
-		return "", "", ErrorNameNotFound{}
-	}
-
-	authorizationToken, ok := args[1].(string)
-	if !ok {
-		return "", "", ErrorInvalidTypeArgument{msg: "Authorization token is not string"}
-	}
-
-	if len(authorizationToken) == 0 {
-		return "", "", ErrorUnauthorized{}
-	}
-
-	return name, authorizationToken, nil
-}
-
-// Execute runs the use case
-func (rt *RegisterThing) Execute(id string, args ...interface{}) error {
+// Register runs the use case
+func (i *ThingInteractor) Register(authorization, id, name string) error {
 	token := ""
-	rt.logger.Debug("Executing register thing use case")
-	name, authorizationToken, err := rt.getArguments(args...)
-	if err != nil {
-		return err
-	}
-
-	err = rt.verifyThingID(id)
+	i.logger.Debug("Executing register thing use case")
+	err := i.verifyThingID(id)
 	if err != nil {
 		goto send
 	}
 
 	// Get the id generated as a token and send in the response
-	token, err = rt.thingProxy.SendCreateThing(id, name, authorizationToken)
+	token, err = i.thingProxy.SendCreateThing(id, name, authorization)
 
 send:
 	response := registerResponse{ID: id, Token: nil, Error: nil}
@@ -139,13 +94,15 @@ send:
 
 	bytes, err := json.Marshal(response)
 	if err != nil {
-		rt.logger.Error(err)
+		i.logger.Error(err)
 		return err
 	}
 
-	err = rt.msgPublisher.SendRegisterDevice(bytes)
+	fmt.Println(token)
+
+	err = i.publisher.SendRegisterDevice(bytes)
 	if err != nil {
-		rt.logger.Error(err)
+		i.logger.Error(err)
 		return err
 	}
 

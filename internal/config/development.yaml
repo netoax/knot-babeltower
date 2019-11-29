@@ -9,4 +9,4 @@ rabbitmq:
 
 things:
   hostname: localhost
-  port: 8082
+  port: 80

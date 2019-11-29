@@ -5,8 +5,8 @@ logger:
   level: info
 
 rabbitmq:
-  url: amqp://localhost/
+  url: amqp://localhost:5666/
 
 things:
   hostname: localhost
-  port: 8280
+  port: 80

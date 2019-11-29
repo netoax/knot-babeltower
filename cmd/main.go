@@ -6,9 +6,13 @@ import (
 	"syscall"
 
 	"github.com/CESARBR/knot-babeltower/internal/config"
-	"github.com/CESARBR/knot-babeltower/pkg/interactors"
 	"github.com/CESARBR/knot-babeltower/pkg/network"
 	"github.com/CESARBR/knot-babeltower/pkg/server"
+	"github.com/CESARBR/knot-babeltower/pkg/thing/interactors"
+
+	thingDeliveryAmqp "github.com/CESARBR/knot-babeltower/pkg/thing/delivery/amqp"
+	"github.com/CESARBR/knot-babeltower/pkg/thing/delivery/http"
+	msgConsumerAmqp "github.com/CESARBR/knot-babeltower/pkg/thing/handler/amqp"
 
 	"github.com/CESARBR/knot-babeltower/pkg/logging"
 )
@@ -36,13 +40,16 @@ func main() {
 	amqp := network.NewAmqpHandler(config.RabbitMQ.URL, logrus.Get("AmqpHandler"))
 	go amqp.Start(amqpChan)
 
-	thingProxy := network.NewThingProxy(logrus.Get("ThingProxy"), config.Things.Hostname, config.Things.Port)
+	thingProxy := http.NewThingProxy(logrus.Get("ThingProxy"), config.Things.Hostname, config.Things.Port)
 
-	msgPublisher := network.NewMsgPublisher(logrus.Get("MsgPublisher"), amqp)
-	registerThing := interactors.NewRegisterThing(logrus.Get("RegisterThing"), msgPublisher, thingProxy)
+	msgPublisher := thingDeliveryAmqp.NewMsgPublisher(logrus.Get("MsgPublisher"), amqp)
+	// registerThing := interactors.NewRegisterThing(logrus.Get("RegisterThing"), msgPublisher, thingProxy)
+	// updateSchema := interactors.NewUpdateSchema(logrus.Get("UpdateSchema"), msgPublisher, thingProxy)
+
+	thingInteractor := interactors.NewThingInteractor(logrus.Get("RegisterThing"), msgPublisher, thingProxy)
 
 	msgChan := make(chan bool, 1)
-	msgConsumer := network.NewMsgConsumer(logrus.Get("MsgConsumer"), amqp, registerThing)
+	msgConsumer := msgConsumerAmqp.NewMsgConsumer(logrus.Get("MsgConsumer"), amqp, thingInteractor)
 
 	serverChan := make(chan bool, 1)
 	server := server.NewServer(config.Server.Port, logrus.Get("Server"))

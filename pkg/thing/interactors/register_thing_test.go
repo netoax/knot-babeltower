@@ -3,6 +3,7 @@ package interactors
 import (
 	"testing"
 
+	"github.com/CESARBR/knot-babeltower/pkg/entities"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -43,6 +44,10 @@ func (fp *FakeMsgPublisher) SendRegisterDevice(msg []byte) error {
 	return nil
 }
 
+func (fp *FakeMsgPublisher) SendUpdatedSchema(thingID string) error {
+	return nil
+}
+
 func (fp *FakeProxy) SendCreateThing(id, name, authorization string) (idGenerated string, err error) {
 	ret := fp.Called(id, name, authorization)
 
@@ -54,6 +59,14 @@ func (fp *FakeProxy) SendCreateThing(id, name, authorization string) (idGenerate
 	}
 
 	return idGenerated, err
+}
+
+func (fp *FakeProxy) UpdateSchema(ID string, schemaList []entities.Schema) error {
+	return nil
+}
+
+func (fp *FakeProxy) Get(ID string) (*entities.Thing, error) {
+	return nil, nil
 }
 
 func (em ErrorFakeProxy) Error() string {
