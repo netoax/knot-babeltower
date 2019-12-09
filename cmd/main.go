@@ -5,10 +5,14 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/CESARBR/knot-babeltower/internal/config"
-	"github.com/CESARBR/knot-babeltower/pkg/interactors"
 	"github.com/CESARBR/knot-babeltower/pkg/network"
+
+	"github.com/CESARBR/knot-babeltower/internal/config"
 	"github.com/CESARBR/knot-babeltower/pkg/server"
+	thingDeliveryAmqp "github.com/CESARBR/knot-babeltower/pkg/thing/delivery/amqp"
+	thingDeliveryHTTP "github.com/CESARBR/knot-babeltower/pkg/thing/delivery/http"
+	msgConsumerAmqp "github.com/CESARBR/knot-babeltower/pkg/thing/handler/amqp"
+	thingInteractors "github.com/CESARBR/knot-babeltower/pkg/thing/interactors"
 	"github.com/CESARBR/knot-babeltower/pkg/user/controllers"
 	userNetwork "github.com/CESARBR/knot-babeltower/pkg/user/delivery/http"
 	userInteractors "github.com/CESARBR/knot-babeltower/pkg/user/interactors"
@@ -41,17 +45,17 @@ func main() {
 	amqp := network.NewAmqp(config.RabbitMQ.URL, logrus.Get("Amqp"))
 
 	// AMQP Publisher
-	msgPublisher := network.NewMsgPublisher(logrus.Get("MsgPublisher"), amqp)
+	msgPublisher := thingDeliveryAmqp.NewMsgPublisher(logrus.Get("MsgPublisher"), amqp)
 
 	// Services
 	userProxy := userNetwork.NewUserProxy(logrus.Get("UserProxy"), config.Users.Hostname, config.Users.Port)
-	thingProxy := network.NewThingProxy(logrus.Get("ThingProxy"), config.Things.Hostname, config.Things.Port)
-	connector := network.NewConnector(logrus.Get("Connector"), amqp)
+	thingProxy := thingDeliveryHTTP.NewThingProxy(logrus.Get("ThingProxy"), config.Things.Hostname, config.Things.Port)
+	connector := thingDeliveryAmqp.NewConnector(logrus.Get("Connector"), amqp)
 
 	// Interactors
 	createUser := userInteractors.NewCreateUser(logrus.Get("CreateUser"), userProxy)
 	createToken := userInteractors.NewCreateToken(logrus.Get("CreateToken"), userProxy)
-	registerThing := interactors.NewRegisterThing(logrus.Get("RegisterThing"), msgPublisher, thingProxy, connector)
+	registerThing := thingInteractors.NewRegisterThing(logrus.Get("RegisterThing"), msgPublisher, thingProxy, connector)
 
 	// Controllers
 	userController := controllers.NewUserController(logrus.Get("Controller"), createUser, createToken)
@@ -62,7 +66,7 @@ func main() {
 
 	// AMQP Handler
 	msgChan := make(chan bool, 1)
-	msgHandler := network.NewMsgHandler(logrus.Get("MsgHandler"), amqp, registerThing)
+	msgHandler := msgConsumerAmqp.NewMsgHandler(logrus.Get("MsgHandler"), amqp, registerThing)
 
 	// Start goroutines
 	go amqp.Start(amqpChan)
