@@ -1,5 +1,5 @@
-hash: 465234515d8d4d58797d120e18899a83c3b660fc031cca78bbd93ec4ace4dd3a
-updated: 2019-12-12T10:28:48.579109-03:00
+hash: 10e3addaeedfac07e614d4d11d5deabd4e8367e5a12958a7964f2ab7e942dd21
+updated: 2020-01-07T15:38:32.156827-03:00
 imports:
 - name: github.com/alecthomas/template
   version: fb15b899a75114aa79cc930e33c46b577cc664b1
@@ -10,11 +10,27 @@ imports:
 - name: github.com/go-openapi/jsonpointer
   version: ed123515f087412cd7ef02e49b0b0a5e6a79a360
 - name: github.com/go-openapi/jsonreference
-  version: 82f31475a8f7a12bc26962f6e26ceade8ea6f66a
+  version: 1f9748e5f45ed77698a87f9f41ae6b35948d9bb8
 - name: github.com/go-openapi/spec
   version: 772572fd19ebcc983369e53bfaed4bde2077fe0c
 - name: github.com/go-openapi/swag
-  version: 8a84ec635f1b280a7062edeab609f0667a053248
+  version: 6a1eb9830f1c6b090dcd01cee6c3983604a2306f
+- name: github.com/go-playground/locales
+  version: 9f105231d3a5f6877a2bf8321dfa15ea6f844b1b
+  subpackages:
+  - currency
+- name: github.com/go-playground/universal-translator
+  version: f87b1403479a348651dbf5f07f5cc6e5fcf07008
+- name: github.com/go-playground/validator
+  version: 691a5f5f25701d0a22785c982db4f22bfac47931
+  subpackages:
+  - v10
+- name: github.com/google/go-querystring
+  version: 44c6ddd0a2342c386950e880b658017258da92fc
+  subpackages:
+  - query
+- name: github.com/gookit/validate
+  version: 95eea92496bb8cec6f10a73355f26a79655f3ec3
 - name: github.com/gorilla/mux
   version: 00bdffe0f3c77e27d2cf6f5c70232a2d3e4d9c15
 - name: github.com/hashicorp/hcl
@@ -33,6 +49,8 @@ imports:
   version: f55edac94c9bbba5d6182a4be46d86a2c9b5b50e
 - name: github.com/KyleBanks/depth
   version: b7f67b6d8d5f169cc58aa195df333dc0b353d6b3
+- name: github.com/leodido/go-urn
+  version: a0f5013415294bb94553821ace21a1a74c0298cc
 - name: github.com/magiconair/properties
   version: de8848e004dd33dc07a2947b3d76f618a7fc7ef1
 - name: github.com/mailru/easyjson
@@ -73,7 +91,7 @@ imports:
 - name: github.com/swaggo/files
   version: 630677cd5c140664e2ff6b53e75c289877268c69
 - name: github.com/swaggo/http-swagger
-  version: c2865af9083e2d95ea55cd2734c03f7f81030cea
+  version: 0e9263c4b516a9b0f7570db00b0c08252b05b43f
 - name: github.com/swaggo/swag
   version: c9f403a30434dc43903a02f80bcf736f11169a86
 - name: golang.org/x/net
@@ -95,14 +113,14 @@ imports:
   - unicode/norm
   - width
 - name: golang.org/x/tools
-  version: 825cb0626375eeecd4d401e7f1653c1ec405d2c8
+  version: a222fb47e2f16cc9a03ca7c9f0bb993368260571
   subpackages:
   - go/ast/astutil
   - go/buildutil
   - go/internal/cgo
   - go/loader
 - name: gopkg.in/cenkalti/backoff.v3
-  version: 1ff1c09ea627d2be64cea605afa999c582c7cd01
+  version: 83c924461941cbb4e05be9bf006ec84e15f6dab9
 - name: gopkg.in/yaml.v2
   version: 51d6538a90f86fe93ac480b35f37b2be17fef232
 testImports:

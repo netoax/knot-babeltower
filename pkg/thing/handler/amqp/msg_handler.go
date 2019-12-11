@@ -63,8 +63,11 @@ func (mc *MsgHandler) onMsgReceived(msgChan chan network.InMsg) {
 			}
 
 			authorizationHeader := msg.Headers["Authorization"]
-			mc.logger.Info("Update schema message received")
-			mc.logger.Info(authorizationHeader, updateSchemaReq)
+			err = mc.thingInteractor.UpdateSchema(authorizationHeader.(string), updateSchemaReq.ID, updateSchemaReq.Schema)
+			if err != nil {
+				mc.logger.Error(err)
+				continue
+			}
 		}
 	}
 }
