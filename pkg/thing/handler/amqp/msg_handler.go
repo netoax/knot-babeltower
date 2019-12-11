@@ -5,13 +5,15 @@ import (
 
 	"github.com/CESARBR/knot-babeltower/pkg/logging"
 	"github.com/CESARBR/knot-babeltower/pkg/network"
+	"github.com/CESARBR/knot-babeltower/pkg/thing/entities"
 	"github.com/CESARBR/knot-babeltower/pkg/thing/interactors"
 )
 
 const (
-	queueNameFogIn  = "fogIn-messages"
-	exchangeFogIn   = "fogIn"
-	bindingKeyFogIn = "device.*"
+	queueNameFogIn   = "fogIn-messages"
+	exchangeFogIn    = "fogIn"
+	bindingKeyDevice = "device.*"
+	bindingKeySchema = "schema.*"
 )
 
 // MsgHandler handle messages received from a service
@@ -19,6 +21,12 @@ type MsgHandler struct {
 	logger          logging.Logger
 	amqp            *network.Amqp
 	thingInteractor interactors.Interactor
+}
+
+// UpdateSchemaRequest represents the update schema msg
+type UpdateSchemaRequest struct {
+	ID     string            `json:"id"`
+	Schema []entities.Schema `json:"schema,omitempty"`
 }
 
 func (mc *MsgHandler) handleRegisterMsg(body []byte, authorizationHeader string) error {
@@ -32,6 +40,7 @@ func (mc *MsgHandler) handleRegisterMsg(body []byte, authorizationHeader string)
 }
 
 func (mc *MsgHandler) onMsgReceived(msgChan chan network.InMsg) {
+	var updateSchemaReq UpdateSchemaRequest
 	for {
 		msg := <-msgChan
 		mc.logger.Infof("Exchange: %s, routing key: %s", msg.Exchange, msg.RoutingKey)
@@ -46,6 +55,16 @@ func (mc *MsgHandler) onMsgReceived(msgChan chan network.InMsg) {
 				mc.logger.Error(err)
 				continue
 			}
+		case "schema.update":
+			err := json.Unmarshal(msg.Body, &updateSchemaReq)
+			if err != nil {
+				mc.logger.Error(err)
+				continue
+			}
+
+			authorizationHeader := msg.Headers["Authorization"]
+			mc.logger.Info("Update schema message received")
+			mc.logger.Info(authorizationHeader, updateSchemaReq)
 		}
 	}
 }
@@ -55,12 +74,25 @@ func NewMsgHandler(logger logging.Logger, amqp *network.Amqp, registerThing inte
 	return &MsgHandler{logger, amqp, registerThing}
 }
 
-// Start starts to listen for messages
+func (mc *MsgHandler) subscribeToMessages(msgChan chan network.InMsg) error {
+	var err error
+	subscribe := func(msgChan chan network.InMsg, queueName, exchange, key string) {
+		if err != nil {
+			return
+		}
+		err = mc.amqp.OnMessage(msgChan, queueName, exchange, key)
+	}
+
+	subscribe(msgChan, queueNameFogIn, exchangeFogIn, bindingKeyDevice)
+	subscribe(msgChan, queueNameFogIn, exchangeFogIn, bindingKeySchema)
+	return err
+}
+
+// Start starts to listen messages
 func (mc *MsgHandler) Start(started chan bool) {
 	mc.logger.Debug("Msg handler started")
-
 	msgChan := make(chan network.InMsg)
-	err := mc.amqp.OnMessage(msgChan, queueNameFogIn, exchangeFogIn, bindingKeyFogIn)
+	err := mc.subscribeToMessages(msgChan)
 	if err != nil {
 		mc.logger.Error(err)
 		started <- false
