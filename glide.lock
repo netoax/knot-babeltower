@@ -1,5 +1,5 @@
-hash: 10e3addaeedfac07e614d4d11d5deabd4e8367e5a12958a7964f2ab7e942dd21
-updated: 2020-01-07T15:38:32.156827-03:00
+hash: 6ec5a10ae6c5291c8a532acdacc175e0e164a8479d1a10da0ec9f8ca48636777
+updated: 2020-01-10T14:43:15.878207-03:00
 imports:
 - name: github.com/alecthomas/template
   version: fb15b899a75114aa79cc930e33c46b577cc664b1
@@ -113,14 +113,14 @@ imports:
   - unicode/norm
   - width
 - name: golang.org/x/tools
-  version: a222fb47e2f16cc9a03ca7c9f0bb993368260571
+  version: 428f1ab0ca03a50bf8ac61408423f510675cd5a9
   subpackages:
   - go/ast/astutil
   - go/buildutil
   - go/internal/cgo
   - go/loader
 - name: gopkg.in/cenkalti/backoff.v3
-  version: 83c924461941cbb4e05be9bf006ec84e15f6dab9
+  version: 1ff1c09ea627d2be64cea605afa999c582c7cd01
 - name: gopkg.in/yaml.v2
   version: 51d6538a90f86fe93ac480b35f37b2be17fef232
 testImports:

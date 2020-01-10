@@ -2,6 +2,7 @@ package amqp
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/CESARBR/knot-babeltower/pkg/logging"
 	"github.com/CESARBR/knot-babeltower/pkg/network"
@@ -39,6 +40,10 @@ func (mc *MsgHandler) handleRegisterMsg(body []byte, authorizationHeader string)
 	return mc.thingInteractor.Register(msgParsed.ID, msgParsed.Name, authorizationHeader)
 }
 
+func (mc *MsgHandler) handleListDevices(authorization string) error {
+	return mc.thingInteractor.List(authorization)
+}
+
 func (mc *MsgHandler) onMsgReceived(msgChan chan network.InMsg) {
 	var updateSchemaReq UpdateSchemaRequest
 	for {
@@ -51,6 +56,14 @@ func (mc *MsgHandler) onMsgReceived(msgChan chan network.InMsg) {
 		switch msg.RoutingKey {
 		case "device.register":
 			err := mc.handleRegisterMsg(msg.Body, authorizationHeader.(string))
+			if err != nil {
+				mc.logger.Error(err)
+				continue
+			}
+		case "device.list":
+			fmt.Println("here")
+			fmt.Println(msg)
+			err := mc.handleListDevices(authorizationHeader.(string))
 			if err != nil {
 				mc.logger.Error(err)
 				continue

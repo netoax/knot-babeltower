@@ -5,6 +5,7 @@ import (
 
 	"github.com/CESARBR/knot-babeltower/pkg/logging"
 	"github.com/CESARBR/knot-babeltower/pkg/network"
+	"github.com/CESARBR/knot-babeltower/pkg/thing/entities"
 )
 
 const (
@@ -24,10 +25,16 @@ type UpdatedSchemaResponse struct {
 	ID string `json:"id"`
 }
 
+// ListThingsResponse represents the list things response
+type ListThingsResponse struct {
+	Things []*entities.Thing `json:"things"`
+}
+
 // Publisher is the interface with methods that the publisher should have
 type Publisher interface {
 	SendRegisterDevice(network.RegisterResponseMsg) error
 	SendUpdatedSchema(thingID string) error
+	SendThings(things []*entities.Thing) error
 }
 
 // NewMsgPublisher constructs the MsgPublisher
@@ -51,6 +58,17 @@ func (mp *MsgPublisher) SendRegisterDevice(msg network.RegisterResponseMsg) erro
 // SendUpdatedSchema sends the updated schema response
 func (mp *MsgPublisher) SendUpdatedSchema(thingID string) error {
 	resp := &UpdatedSchemaResponse{thingID}
+	msg, err := json.Marshal(resp)
+	if err != nil {
+		return err
+	}
+
+	return mp.amqp.PublishPersistentMessage(exchangeFogOut, schemaOutKey, msg)
+}
+
+// SendThings sends the updated schema response
+func (mp *MsgPublisher) SendThings(things []*entities.Thing) error {
+	resp := &ListThingsResponse{things}
 	msg, err := json.Marshal(resp)
 	if err != nil {
 		return err

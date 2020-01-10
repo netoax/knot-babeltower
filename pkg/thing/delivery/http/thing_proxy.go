@@ -2,6 +2,7 @@ package http
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -16,6 +17,7 @@ import (
 type ThingProxy interface {
 	Create(id, name, authorization string) (idGenerated string, err error)
 	UpdateSchema(authorization, ID string, schemaList []entities.Schema) error
+	List(authorization string) (things []*entities.Thing, err error)
 }
 
 type proxy struct {
@@ -70,7 +72,7 @@ func (p proxy) getJSONBody(id, name string, schemaList []entities.Schema) ([]byt
 
 // NewThingProxy creates a proxy to the thing service
 func NewThingProxy(logger logging.Logger, hostname string, port uint16) ThingProxy {
-	url := fmt.Sprintf("http://%s:%d", hostname, port)
+	url := fmt.Sprintf("https://%s:%d", hostname, port)
 
 	logger.Debug("Proxy setup to " + url)
 	return proxy{url, logger}
@@ -127,7 +129,9 @@ func (p proxy) sendRequest(info *RequestInfo) (*http.Response, error) {
 	/**
 	 * Add Timeout in http.Client to avoid blocking the request.
 	 */
+	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	client := &http.Client{Timeout: 10 * time.Second}
+
 	req, err := http.NewRequest(info.method, info.url+queryString, bytes.NewBuffer(info.data))
 	if err != nil {
 		p.logger.Error(err)
@@ -202,6 +206,20 @@ func (p proxy) UpdateSchema(authorization, ID string, schemaList []entities.Sche
 
 	defer resp.Body.Close()
 	return p.mapErrorFromStausCode(resp.StatusCode)
+}
+
+func (p proxy) List(authorization string) (things []*entities.Thing, err error) {
+	pagThings, err := p.getPaginatedThings(authorization)
+	if err != nil {
+		return nil, nil
+	}
+
+	for i := range pagThings {
+		t := pagThings[i]
+		things = append(things, &entities.Thing{ID: t.Metadata.Knot.ID, Name: t.Name, Schema: t.Metadata.Knot.Schema})
+	}
+
+	return things, err
 }
 
 func (p proxy) getPaginatedThings(authorization string) ([]*ThingProxyRepr, error) {

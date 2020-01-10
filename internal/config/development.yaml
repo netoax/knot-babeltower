@@ -5,12 +5,12 @@ logger:
   level: debug
 
 users:
-  hostname: localhost
-  port: 8180
+  hostname: users.fog
+  port: 443
 
 rabbitmq:
   url: amqp://localhost/
 
 things:
-  hostname: localhost
-  port: 8082
+  hostname: things.fog
+  port: 443
